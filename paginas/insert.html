@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Painel de Inserção Dinâmico</title>
+    <style>
+        /* Estilos omitidos para brevidade, use os mesmos que você já tem */
+        body { font-family: sans-serif; line-height: 1.6; background-color: #f4f4f9; color: #333; margin: 0; padding: 20px; }
+        main { max-width: 800px; margin: 20px auto; }
+        .form-container { padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; }
+        .checkbox-group { display: flex; align-items: center; gap: 10px; }
+        button { background-color: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+        #form-feedback { margin-top: 15px; text-align: center; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <header><h1>Meu Painel de Conteúdo</h1></header>
+
+    <main>
+        <div class="form-container">
+            <h2>Adicionar Novo Conteúdo</h2>
+            <form id="add-content-form">
+                
+                <div class="form-group">
+                    <label for="tabela_destino">Escolha a Tabela de Destino</label>
+                    <select id="tabela_destino" required>
+                        <option value="textos">Anotações (Padrão)</option>
+                        <option value="Next">Next</option>
+                        <option value="html">Html</option>
+                        <option value="node">Node</option>
+                        <option value="css">css</option>
+                        <option value="js">JavaScript</option>
+                        <option value="java">Java</option>
+                        <option value="python">Python</option>
+                        <option value="genexus">Genexus</option>
+                        <option value="github">GitHub</option>
+                    </select>
+                </div>
+                
+                 <div class="form-group"><label for="estilo">Estilo do Texto</label>
+                    <select id="estilo">
+                        <option value="titulo_linguagens">Título da Pagina (60px; branco)</option>
+                        <option value="secao_titulo">Titulo do Conteudo(50px; branco)</option>
+                        <option value="secao_titulo2" selected>Titulo da Seção (38px; roxo)</option>
+                        <option value="secao_titulo3">Subtitulo Seção (32px; roxo claro)</option>
+                        <option value="subtitulo">Titulo (24px; branco)</option>
+                        <option value="secao_titulo4">Titulo (22px; branco)</option>
+                        <option value="texto_linguagens">Texto Comum (18px; cinza)</option>
+                        <option value="subtexto">Subtexto (???)</option>
+                         <option value="texto_m">Texto branco (25px; branco)</option>
+                        <option value="texto_ex">Texto Exemplo</option>
+                        <option value="subtexto">Linha de Codigo (18px; roxo)</option>
+                        <option value="texto_roxo">Texto Roxo(20px; roxo)</option>
+                        
+                    </select>
+                </div>
+                <div class="form-group"><label for="titulo">Conteúdo Principal</label><textarea id="titulo" rows="4" required></textarea></div>
+                <div class="form-group"><label for="conteudo">Conteúdo Secundário (Opcional)</label><textarea id="conteudo"></textarea></div>
+                <div class="form-group checkbox-group"><input type="checkbox" id="e_codigo_checkbox" style="width: auto;"><label for="e_codigo_checkbox" style="font-weight: normal; margin: 0;">É um bloco de código?</label></div>
+                <div class="form-group"><label for="imagem_upload">Enviar Imagem (Opcional)</label><input type="file" id="imagem_upload" accept="image/*"></div>
+                <div class="form-group"><label for="senha">Senha</label><input type="password" id="senha" required></div>
+                <button type="submit">Adicionar Conteúdo</button>
+                <div id="form-feedback"></div>
+            </form>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+
+
+
+        // Ao carregar a página, define o valor salvo (se existir)
+// ...existing code...
+        const selectTabela = document.getElementById('tabela_destino');
+        const selectSenha = document.getElementById('senha'); // Adicione esta linha
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const ultimaTabela = localStorage.getItem('ultimaTabelaSelecionada');
+            const senhaSalva = localStorage.getItem('senhaDigitada');
+            if (senhaSalva) {
+                selectSenha.value = senhaSalva;
+            }
+            if (ultimaTabela) {
+                selectTabela.value = ultimaTabela;
+            }
+        });
+
+        // Sempre que o usuário mudar, salva no localStorage
+        selectTabela.addEventListener('change', function() {
+            localStorage.setItem('ultimaTabelaSelecionada', this.value);
+        });
+
+        selectSenha.addEventListener('change', function() {
+            localStorage.setItem('senhaDigitada', this.value);
+        });
+        // ...existing code...
+
+
+
+        // --- 1. CONFIGURAÇÃO ---
+        const SUPABASE_URL = 'https://bkyyhimkssvrxrqfwwmz.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJreXloaW1rc3N2cnhycWZ3d216Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1MTk0NTUsImV4cCI6MjA3MDA5NTQ1NX0.TQ868aV76UvU-0Yfzen-vGb67Sn7_AOJGpMZlQYZqD4';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const SENHA_SECRETA_DO_ADMIN = 'admin123';
+
+        // --- 2. FUNÇÕES ---
+        async function adicionarConteudo(event) {
+            event.preventDefault();
+            const feedback = document.getElementById('form-feedback');
+            feedback.textContent = 'Enviando...';
+
+            // MUDANÇA: Captura o nome da tabela selecionada no novo campo
+            const tabelaSelecionada = document.getElementById('tabela_destino').value;
+
+            // Captura os outros campos do formulário (sem alteração)
+            const estilo = document.getElementById('estilo').value;
+            const titulo = document.getElementById('titulo').value;
+            const conteudo = document.getElementById('conteudo').value;
+            const e_codigo = document.getElementById('e_codigo_checkbox').checked;
+            const arquivoImagem = document.getElementById('imagem_upload').files[0];
+            const senhaDigitada = document.getElementById('senha').value;
+            let urlDaImagem = null;
+
+            if (senhaDigitada !== SENHA_SECRETA_DO_ADMIN) {
+                feedback.textContent = 'Senha incorreta!';
+                feedback.style.color = 'red';
+                return;
+            }
+
+            try {
+                if (arquivoImagem) {
+                    // Lógica de upload de imagem (sem alteração)
+                    const nomeArquivo = `${Date.now()}-${arquivoImagem.name}`;
+                    const { error: uploadError } = await supabaseClient.storage.from('imagens_posts').upload(nomeArquivo, arquivoImagem);
+                    if (uploadError) throw uploadError;
+                    const { data: urlData } = supabaseClient.storage.from('imagens_posts').getPublicUrl(nomeArquivo);
+                    urlDaImagem = urlData.publicUrl;
+                }
+
+                feedback.textContent = 'Salvando no banco de dados...';
+
+                // MUDANÇA: Usa a variável 'tabelaSelecionada' no .from()
+                const { error: insertError } = await supabaseClient
+                    .from(tabelaSelecionada) // O nome da tabela agora é dinâmico!
+                    .insert([{ titulo, conteudo, estilo, e_codigo, url_imagem: urlDaImagem }]);
+                
+                if (insertError) throw insertError;
+
+                feedback.textContent = `Conteúdo adicionado com sucesso na tabela '${tabelaSelecionada}'!`;
+                document.getElementById('add-content-form').reset();
+
+            } catch (error) {
+                console.error('Ocorreu um erro:', error);
+                feedback.textContent = `Erro: ${error.message}`;
+                feedback.style.color = 'red';
+            }
+            setTimeout(function() {
+            // O código que você quer executar após o tempo
+            location.reload();
+        }, 2000); // 3000 milissegundos = 3 segundos
+        }
+
+        // --- 3. EXECUÇÃO INICIAL ---
+        document.getElementById('add-content-form').addEventListener('submit', adicionarConteudo);
+        
+        
+    </script>
+</body>
+</html>

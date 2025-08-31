@@ -1,0 +1,17 @@
+/*  Footer */
+
+@import "./global/header.css";
+@import "./global/global.css";
+@import "./global/footer.css";
+
+/*  Paginas */
+
+@import "./paginas/introducao.css";
+@import "./paginas/conteudo.css";
+@import "./paginas/sobre.css";
+
+/*  Conteudo linguagens */
+
+@import "./linguagens/js.css";
+
+@import "./paginas/view.css"

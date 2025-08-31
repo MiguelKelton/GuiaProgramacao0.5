@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizando Conteúdo</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <div id="zoomContainer" onclick="fecharZoom()">
+        <span id="fecharZoom">&times;</span>
+        <img id="imagemZoom" src="" alt="Imagem em zoom">
+    </div>
+
+    <header>
+        <div class="header">
+           <a href="../index.html"><img class="img-header" src="../imagens/Icone.svg" alt=""></a>
+            <h1><span id="nome-tabela"> Carregando...</span></h1>
+             <a href="../index.html"><img class="img-header" src="../imagens/House (1).svg" alt=""> </a>
+        </div>
+        
+    </header>
+
+    <main>
+        <div class="container-main">
+            <div class="container">
+                <div class="conteudos-container" id="conteudos-container">
+                    <p class="loading-message">Carregando...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // --- 1. CONFIGURAÇÃO ---
+        const SUPABASE_URL = 'https://bkyyhimkssvrxrqfwwmz.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJreXloaW1rc3N2cnhycWZ3d216Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1MTk0NTUsImV4cCI6MjA3MDA5NTQ1NX0.TQ868aV76UvU-0Yfzen-vGb67Sn7_AOJGpMZlQYZqD4';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let canalAtual = null;
+
+        // --- 2. FUNÇÕES ---
+
+        // Funções auxiliares de Zoom e Cópia (Vêm da página antiga)
+        function abrirZoom(wrapper) { const i=wrapper.querySelector('img'),z=document.getElementById('imagemZoom');z.src=i.src;document.getElementById('zoomContainer').style.display='flex'; }
+        function fecharZoom() { document.getElementById('zoomContainer').style.display='none'; }
+        function copiarTexto(b){const t=b.parentElement.querySelector('.texto_cod code').innerText;navigator.clipboard.writeText(t).then(()=>{const o=b.innerHTML;b.innerHTML='';b.disabled=!0;setTimeout(()=>{b.innerHTML=o;b.disabled=!1},1e2)}).catch(e=>{console.error('Erro:',e);alert('Falha ao copiar')})}
+
+
+        /**
+         * Busca e exibe os conteúdos da tabela especificada.
+         * Esta função agora contém toda a lógica de renderização.
+         */
+        async function carregarConteudos(nomeDaTabela) {
+            const container = document.getElementById('conteudos-container');
+            container.innerHTML = '<p class="loading-message">Carregando conteúdos...</p>';
+
+            const { data, error } = await supabaseClient
+                .from(nomeDaTabela)
+                .select('*')
+                .order('id', { ascending: true });
+
+            if (error) {
+                container.innerHTML = `<p class="error-message">Erro ao carregar: ${error.message}</p>`;
+                return;
+            }
+
+            if (data && data.length > 0) {
+                // LÓGICA DE RENDERIZAÇÃO COMPLETA (Vem da página antiga)
+                // Ela decide se renderiza uma imagem, um código ou um texto estilizado.
+                container.innerHTML = '<h2>Conteúdos Publicados</h2>' + data.map(item => {
+                    // Prioridade 1: Imagem
+                    if (item.url_imagem) {
+                        return `<div class="imagem-wrapper" onclick="abrirZoom(this)"><img class="img" src="${item.url_imagem}" alt="Imagem do post"></div>`;
+                    } 
+                    // Prioridade 2: Bloco de Código
+                    else if (item.e_codigo) {
+                        return `<div class="container_cod"><p class="texto_cod"><code>${item.titulo}</code></p><button onclick="copiarTexto(this)"><img src="../imagens/copy.svg" alt="Copiar"></button></div>`;
+                    } 
+                    // Prioridade 3: Texto com Estilo
+                    else {
+                        return `<div class="conteudo-item"><div class="${item.estilo || 'texto-medio'}">${item.titulo}</div>${item.conteudo ? `<p>${item.conteudo}</p>` : ''}</div>`;
+                    }
+                }).join('');
+            } else {
+                container.innerHTML = '<p class="loading-message">Nenhum conteúdo encontrado nesta tabela.</p>';
+            }
+        }
+
+        /**
+         * "Escuta" por mudanças na tabela especificada. (Lógica da página view)
+         */
+        function escutarMudancas(nomeDaTabela) {
+            if (canalAtual) { supabaseClient.removeChannel(canalAtual); }
+
+            canalAtual = supabaseClient
+              .channel(`mudancas-em-${nomeDaTabela}`)
+              .on('postgres_changes', { event: '*', schema: 'public', table: nomeDaTabela }, () => {
+                  carregarConteudos(nomeDaTabela);
+              })
+              .subscribe();
+        }
+
+        // --- 3. EXECUÇÃO INICIAL (O "CÉREBRO" da página view) ---
+
+        function inicializarPagina() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tabelaParaCarregar = urlParams.get('tabela');
+
+            if (tabelaParaCarregar) {
+                document.getElementById('nome-tabela').textContent = tabelaParaCarregar;
+                carregarConteudos(tabelaParaCarregar);
+                escutarMudancas(tabelaParaCarregar);
+            } else {
+                document.getElementById('nome-tabela').textContent = 'ERRO';
+                document.getElementById('conteudos-container').innerHTML = 
+                    '<h2>Nenhuma tabela selecionada.</h2><p>Por favor, volte para a <a href="home.html">página inicial</a> para escolher um conteúdo.</p>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', inicializarPagina);
+    </script>
+</body>
+</html>
