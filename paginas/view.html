@@ -70,7 +70,7 @@
             if (data && data.length > 0) {
                 // LÓGICA DE RENDERIZAÇÃO COMPLETA (Vem da página antiga)
                 // Ela decide se renderiza uma imagem, um código ou um texto estilizado.
-                container.innerHTML = '<h2>Conteúdos Publicados</h2>' + data.map(item => {
+                container.innerHTML = '<h2 class="txtConteudo"></h2>' + data.map(item => {
                     // Prioridade 1: Imagem
                     if (item.url_imagem) {
                         return `<div class="imagem-wrapper" onclick="abrirZoom(this)"><img class="img" src="${item.url_imagem}" alt="Imagem do post"></div>`;
