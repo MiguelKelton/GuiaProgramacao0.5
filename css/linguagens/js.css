@@ -186,7 +186,11 @@ span{
     color: #c0c0c0;
     margin-bottom: 10px;
 }
-
+.texto2{
+    font-size: 18px;
+    color: #f85b00;
+    margin-bottom: 10px;
+}
 
 .box_cod{
     background-color: #151329 ; 
