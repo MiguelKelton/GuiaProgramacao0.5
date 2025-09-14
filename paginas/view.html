@@ -16,7 +16,7 @@
     <header>
         <div class="header">
            <a href="../index.html"><img class="img-header" src="../imagens/Icone.svg" alt=""></a>
-            <h1><span id="nome-tabela"> Carregando...</span></h1>
+           <h1><span id="nome-tabela"> Carregando...</span></h1>
              <a href="../index.html"><img class="img-header" src="../imagens/House (1).svg" alt=""> </a>
         </div>
         
@@ -43,10 +43,10 @@
 
         // --- 2. FUNÇÕES ---
 
-        // Funções auxiliares de Zoom e Cópia (Vêm da página antiga)
+        // Funções auxiliares de Zoom e Cópia
         function abrirZoom(wrapper) { const i=wrapper.querySelector('img'),z=document.getElementById('imagemZoom');z.src=i.src;document.getElementById('zoomContainer').style.display='flex'; }
         function fecharZoom() { document.getElementById('zoomContainer').style.display='none'; }
-        function copiarTexto(b){const t=b.parentElement.querySelector('.texto_cod code').innerText;navigator.clipboard.writeText(t).then(()=>{const o=b.innerHTML;b.innerHTML='';b.disabled=!0;setTimeout(()=>{b.innerHTML=o;b.disabled=!1},1e2)}).catch(e=>{console.error('Erro:',e);alert('Falha ao copiar')})}
+        function copiarTexto(b){const t=b.parentElement.querySelector('.texto_cod code').innerText;navigator.clipboard.writeText(t).then(()=>{const o=b.innerHTML;b.innerHTML='Copiado!';b.disabled=!0;setTimeout(()=>{b.innerHTML=o;b.disabled=!1},2e3)}).catch(e=>{console.error('Erro:',e);alert('Falha ao copiar')})}
 
 
         /**
@@ -57,10 +57,14 @@
             const container = document.getElementById('conteudos-container');
             container.innerHTML = '<p class="loading-message">Carregando conteúdos...</p>';
 
+            // ================================================================
+            // ===== MUDANÇA PRINCIPAL APLICADA AQUI =====
+            // Trocamos a ordenação de 'id' para a sua coluna 'ordem'.
+            // ================================================================
             const { data, error } = await supabaseClient
                 .from(nomeDaTabela)
                 .select('*')
-                .order('id', { ascending: true });
+                .order('ordem', { ascending: true, nullsfirst: false });
 
             if (error) {
                 container.innerHTML = `<p class="error-message">Erro ao carregar: ${error.message}</p>`;
