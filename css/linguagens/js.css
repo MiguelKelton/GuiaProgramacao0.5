@@ -1,5 +1,5 @@
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Source Sans 3', sans-serif;
     background-color: #121212;
     color: white;
     margin: 0;
@@ -87,8 +87,18 @@ body {
 .secao_titulo2{
     font-size: 38px;
     font-weight: bold;
-    margin-bottom: 10px;
+    margin-bottom: 30px;
+    margin-top: 100px;
     color: #6c60f8;
+    font-family: 'Lora', serif;
+    text-align: center;
+
+    border-top: 2px solid #6c60f8;
+    border-style:dashed;
+    border-bottom: 0px;
+    border-left: 0px;
+    border-right: 0px;
+
 }
 .secao_titulo3{
     font-size: 32px;

@@ -5,6 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visualizando Conteúdo</title>
     <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@700&display=swap" rel="stylesheet">
+
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;700&display=swap" rel="stylesheet">
+
 </head>
 <body>
 
@@ -19,7 +32,6 @@
            <h1><span id="nome-tabela"> Carregando...</span></h1>
              <a href="../index.html"><img class="img-header" src="../imagens/House (1).svg" alt=""> </a>
         </div>
-        
     </header>
 
     <main>
@@ -33,6 +45,10 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    
     <script>
         // --- 1. CONFIGURAÇÃO ---
         const SUPABASE_URL = 'https://bkyyhimkssvrxrqfwwmz.supabase.co';
@@ -42,25 +58,14 @@
         let canalAtual = null;
 
         // --- 2. FUNÇÕES ---
-
-        // Funções auxiliares de Zoom e Cópia
         function abrirZoom(wrapper) { const i=wrapper.querySelector('img'),z=document.getElementById('imagemZoom');z.src=i.src;document.getElementById('zoomContainer').style.display='flex'; }
         function fecharZoom() { document.getElementById('zoomContainer').style.display='none'; }
         function copiarTexto(b){const t=b.parentElement.querySelector('.texto_cod code').innerText;navigator.clipboard.writeText(t).then(()=>{const o=b.innerHTML;b.innerHTML='Copiado!';b.disabled=!0;setTimeout(()=>{b.innerHTML=o;b.disabled=!1},2e3)}).catch(e=>{console.error('Erro:',e);alert('Falha ao copiar')})}
 
-
-        /**
-         * Busca e exibe os conteúdos da tabela especificada.
-         * Esta função agora contém toda a lógica de renderização.
-         */
         async function carregarConteudos(nomeDaTabela) {
             const container = document.getElementById('conteudos-container');
             container.innerHTML = '<p class="loading-message">Carregando conteúdos...</p>';
-
-            // ================================================================
-            // ===== MUDANÇA PRINCIPAL APLICADA AQUI =====
-            // Trocamos a ordenação de 'id' para a sua coluna 'ordem'.
-            // ================================================================
+            
             const { data, error } = await supabaseClient
                 .from(nomeDaTabela)
                 .select('*')
@@ -72,59 +77,39 @@
             }
 
             if (data && data.length > 0) {
-                // LÓGICA DE RENDERIZAÇÃO COMPLETA (Vem da página antiga)
-                // Ela decide se renderiza uma imagem, um código ou um texto estilizado.
                 container.innerHTML = '<h2 class="txtConteudo"></h2>' + data.map(item => {
-                    // Prioridade 1: Imagem
                     if (item.url_imagem) {
                         return `<div class="imagem-wrapper" onclick="abrirZoom(this)"><img class="img" src="${item.url_imagem}" alt="Imagem do post"></div>`;
                     } 
-                    // Prioridade 2: Bloco de Código
                     else if (item.e_codigo) {
-                        return `<div class="container_cod"><p class="texto_cod"><code>${item.titulo}</code></p><button onclick="copiarTexto(this)"><img src="../imagens/copy.svg" alt="Copiar"></button></div>`;
+                        return `
+                        <div class="container_cod">
+                            <pre class="texto_cod"><code class="language-${item.linguagem_codigo || 'js'}">${item.titulo}</code></pre>
+                            <button onclick="copiarTexto(this)"><img src="../imagens/copy.svg" alt="Copiar"></button>
+                        </div>`;
                     } 
-                    // Prioridade 3: Texto com Estilo
                     else {
                         return `<div class="conteudo-item"><div class="${item.estilo || 'texto-medio'}">${item.titulo}</div>${item.conteudo ? `<p>${item.conteudo}</p>` : ''}</div>`;
                     }
                 }).join('');
+
+                // NOVO: Re-executa o Prism para colorir os novos blocos de código
+                Prism.highlightAll();
+
             } else {
                 container.innerHTML = '<p class="loading-message">Nenhum conteúdo encontrado nesta tabela.</p>';
             }
         }
 
-        /**
-         * "Escuta" por mudanças na tabela especificada. (Lógica da página view)
-         */
-        function escutarMudancas(nomeDaTabela) {
-            if (canalAtual) { supabaseClient.removeChannel(canalAtual); }
-
-            canalAtual = supabaseClient
-              .channel(`mudancas-em-${nomeDaTabela}`)
-              .on('postgres_changes', { event: '*', schema: 'public', table: nomeDaTabela }, () => {
-                  carregarConteudos(nomeDaTabela);
-              })
-              .subscribe();
-        }
-
-        // --- 3. EXECUÇÃO INICIAL (O "CÉREBRO" da página view) ---
-
-        function inicializarPagina() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const tabelaParaCarregar = urlParams.get('tabela');
-
-            if (tabelaParaCarregar) {
-                document.getElementById('nome-tabela').textContent = tabelaParaCarregar;
-                carregarConteudos(tabelaParaCarregar);
-                escutarMudancas(tabelaParaCarregar);
-            } else {
-                document.getElementById('nome-tabela').textContent = 'ERRO';
-                document.getElementById('conteudos-container').innerHTML = 
-                    '<h2>Nenhuma tabela selecionada.</h2><p>Por favor, volte para a <a href="home.html">página inicial</a> para escolher um conteúdo.</p>';
-            }
-        }
+        function escutarMudancas(nomeDaTabela) { /* ...código do Realtime... */ }
+        function inicializarPagina() { /* ...código de inicialização... */ }
 
         document.addEventListener('DOMContentLoaded', inicializarPagina);
+
+        // ... Lógica completa das suas outras funções aqui ...
+        function escutarMudancas(nomeDaTabela) {if (canalAtual) { supabaseClient.removeChannel(canalAtual); } canalAtual = supabaseClient.channel(`mudancas-em-${nomeDaTabela}`).on('postgres_changes', { event: '*', schema: 'public', table: nomeDaTabela }, () => {carregarConteudos(nomeDaTabela);}).subscribe();}
+        function inicializarPagina() {const urlParams = new URLSearchParams(window.location.search); const tabelaParaCarregar = urlParams.get('tabela'); if (tabelaParaCarregar) {document.getElementById('nome-tabela').textContent = tabelaParaCarregar; carregarConteudos(tabelaParaCarregar); escutarMudancas(tabelaParaCarregar);} else {document.getElementById('nome-tabela').textContent = 'ERRO'; document.getElementById('conteudos-container').innerHTML = '<h2>Nenhuma tabela selecionada.</h2><p>Por favor, volte para a <a href="home.html">página inicial</a> para escolher um conteúdo.</p>';}}
+        function copiarTexto(b){const t=b.parentElement.querySelector('code').innerText;navigator.clipboard.writeText(t).then(()=>{const o=b.innerHTML;b.innerHTML='Copiado!';b.disabled=!0;setTimeout(()=>{b.innerHTML=o;b.disabled=!1},2e3)}).catch(e=>{console.error('Erro:',e);alert('Falha ao copiar')})}
     </script>
 </body>
 </html>
